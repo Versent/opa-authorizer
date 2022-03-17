@@ -5,18 +5,22 @@
     "opa-authorizer": "bin/opa-authorizer.js"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "tsc --noEmit",
     "test": "jest",
-    "cdk": "cdk"
+    "deploy": "npx cdk deploy"
   },
   "devDependencies": {
     "@aws-cdk/assertions": "1.148.0",
+    "@aws-cdk/aws-apigatewayv2": "1.148.0",
+    "@aws-cdk/aws-apigatewayv2-authorizers": "1.148.0",
+    "@aws-cdk/aws-apigatewayv2-integrations": "1.148.0",
+    "@aws-cdk/aws-lambda": "1.148.0",
+    "@aws-cdk/aws-lambda-go": "1.148.0",
     "@types/jest": "^26.0.10",
     "@types/node": "10.17.27",
+    "aws-cdk": "1.148.0",
     "jest": "^26.4.2",
     "ts-jest": "^26.2.0",
-    "aws-cdk": "1.148.0",
     "ts-node": "^9.0.0",
     "typescript": "~3.9.7"
   },

@@ -1,14 +1,49 @@
-# Welcome to your CDK TypeScript project
+# Open Policy Agent Spike
 
-This is a blank project for TypeScript development with CDK.
+Open Policy Agent Authentication Lambda Authorizer
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+based on 
+https://aws.amazon.com/blogs/opensource/creating-a-custom-lambda-authorizer-using-open-policy-agent/
 
-## Useful commands
+## Structure
+```
+|-- .
+    |-- bin # CDK entry
+    |-- cdk.out
+    |-- function # Go entry point
+    |   |-- .gitignore
+    |   |-- go.mod
+    |   |-- go.sum
+    |   |-- main.go # Go handler in here
+    |   |-- data
+    |       |-- data.json # dummy data for OPA
+    |       |-- policies.rego # dummy rego policies
+    |-- lib
+    |   |-- opa-authorizer-stack.ts
+    |-- test
+        |-- opa-authorizer.test.ts
+```
+## Open Policy Agent Integration
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+Achieved via go library `github.com/open-policy-agent/opa`
+
+### OPA Policies
+
+Written in rego, and contained in `./function/data/policies.rego`.
+
+Rego is a domain specific language for specifying polices
+
+### OPA Data
+
+Runtime data provided to OPA to allow dynamic decision making, typically this would be updated from an external datasource in this example its just a json file `data.json`
+
+## Deployment 
+
+Built using CDK v1 
+
+```bash
+npm run deploy  # Using currently active creds
+npx cdk deploy --profile <profile> # specific profile
+```
+
+

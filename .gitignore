@@ -1,0 +1,95 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@KroumVersent 
+aws
+/
+aws-cdk
+Public
+Code
+Issues
+2.2k
+Pull requests
+186
+Discussions
+Actions
+Projects
+2
+Wiki
+Security
+Insights
+aws-cdk/.gitignore
+@zradlo1984
+zradlo1984 fix(cli): cannot use CA bundle and proxy at the same time (#17990)
+…
+Latest commit 3d478ca on 4 Jan
+ History
+ 18 contributors
+@eladb@rix0rrr@RomainMuller@jogold@CaerusKaru@mindstorms6@sam-goodwin@njlynch@NetaNir@otterley@rsmogura@justin8
+49 lines (40 sloc)  628 Bytes
+   
+# VSCode extension
+
+# Store launch config in repo but not settings
+.vscode/settings.json
+/.favorites.json
+
+# TypeScript incremental build states
+*.tsbuildinfo
+
+# Local state files & OS specifics
+.DS_Store
+node_modules/
+lerna-debug.log
+dist/
+pack/
+.BUILD_COMPLETED
+.local-npm/
+.tools/
+coverage/
+.nyc_output
+.nycrc
+.LAST_BUILD
+*.sw[a-z]
+*~
+.idea
+*.iml
+junit.xml
+
+# We don't want tsconfig at the root
+/tsconfig.json
+
+# CDK Context & Staging files
+cdk.context.json
+.cdk.staging/
+cdk.out/
+*.tabl.json
+
+# Yarn error log
+yarn-error.log
+
+# VSCode history plugin
+.vscode/.history/
+
+# Cloud9
+.c9
+.nzm-*
+
+/.versionrc.json
+RELEASE_NOTES.md
+© 2022 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
