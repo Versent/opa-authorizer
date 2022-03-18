@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -36,10 +37,6 @@ func printDirs(path string) {
 }
 
 func init() {
-
-	printDirs(".")
-	printDirs("..")
-
 	policyData, err := loader.All([]string{"data"})
 	if err != nil {
 		log.Fatalf("Failed to load bundle from disk: %v", err)
@@ -58,27 +55,33 @@ func init() {
 }
 
 func handler(request events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	log.Println("handler start ")
 
-	log.Println("handler start")
+	path := request.Path
+	log.Println("path is = ", path)
 
-	usergroup := request.Headers["usergroup"]
-	resource := request.Headers["resource"]
+	method := request.HTTPMethod
+	log.Println("method is = ", method)
 
-	log.Println("usergroup is = ", usergroup)
-	log.Println("resource is = ", resource)
+	tokenHeader := request.Headers["Authorization"]
+	log.Println("tokenHeader is = ", tokenHeader)
+
+	tokens := strings.Split(tokenHeader, " ")
+	token := tokens[1]
+	log.Println("token is = ", token)
 
 	// Run evaluation.
 	start := time.Now()
 	// Create a new query that uses the compiled policy from above.
 	rego := rego.New(
-		rego.Query("data.opablog.allow"),
+		rego.Query("data.testopa.allow"), // query the policy
 		rego.Compiler(compiler),
 		rego.Store(store),
-		rego.Input(
-			map[string]interface{}{
-				"Usergroup": usergroup,
-				"Resource":  resource,
-			}),
+		rego.Input(map[string]interface{}{
+			"token":  token,
+			"method": method,
+			"path":   path,
+		}),
 	)
 
 	elapsed := time.Since(start)
