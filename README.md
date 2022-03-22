@@ -22,6 +22,8 @@ https://aws.amazon.com/blogs/opensource/creating-a-custom-lambda-authorizer-usin
     |   |-- opa-authorizer-stack.ts
     |-- test
         |-- opa-authorizer.test.ts
+    |-- postmanv # example postman collection
+        |-- OPA_Authorizer_Example.postman_collection.json
 ```
 ## Open Policy Agent Integration
 
@@ -36,6 +38,12 @@ Rego is a domain specific language for specifying polices
 ### OPA Data
 
 Runtime data provided to OPA to allow dynamic decision making, typically this would be updated from an external datasource in this example its just a json file `data.json`
+
+### Postman Example
+
+See the `postman` folder for a collection that can be imported into Postman to test out this deployment, 
+
+Note: You may need to change policies to allow your user name though, see `function/data/policies.rego`
 
 ## Deployment 
 

@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"errors"
-	"io/ioutil"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/loader"
 	"github.com/open-policy-agent/opa/rego"
@@ -22,19 +22,6 @@ var (
 	store    storage.Store
 	ctx      = context.Background()
 )
-
-func printDirs(path string) {
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("dir %s", path)
-
-	for _, file := range files {
-		log.Println(file.Name(), file.IsDir())
-	}
-}
 
 func init() {
 	policyData, err := loader.All([]string{"data"})
@@ -54,21 +41,32 @@ func init() {
 	}
 }
 
-func handler(request events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2CustomAuthorizerSimpleResponse, error) {
 	log.Println("handler start ")
 
-	path := request.Path
+	log.Printf("Request = %+v\n", request)
+
+	path := request.RawPath
 	log.Println("path is = ", path)
 
-	method := request.HTTPMethod
+	method := request.RequestContext.HTTP.Method
 	log.Println("method is = ", method)
 
-	tokenHeader := request.Headers["Authorization"]
+	tokenHeader := request.Headers["authorization"]
 	log.Println("tokenHeader is = ", tokenHeader)
 
 	tokens := strings.Split(tokenHeader, " ")
 	token := tokens[1]
 	log.Println("token is = ", token)
+
+	log.Println("Attempting to validate token")
+	parsedToken := validateJWT("ap-southeast-2", "ap-southeast-2_bNwBiXJry", token)
+	log.Println("id", parsedToken.JwtID())
+	log.Println("sub", parsedToken.Subject())
+	log.Println("exp", parsedToken.Expiration().GoString())
+	log.Println("iss", parsedToken.IssuedAt())
+
+	log.Printf("ParsedToken = %+v\n", parsedToken)
 
 	// Run evaluation.
 	start := time.Now()
@@ -88,19 +86,30 @@ func handler(request events.APIGatewayCustomAuthorizerRequestTypeRequest) (event
 	log.Println("Query initiation  took ", elapsed)
 	start_eval := time.Now()
 	// Run evaluation.
-	rs, err := rego.Eval(ctx)
+	regoResult, err := rego.Eval(ctx)
 	elapsed_eval := time.Since(start_eval)
 	log.Println("Evaluation  took ", elapsed_eval)
 
 	if err != nil {
-		// Handle error.
+		log.Fatalf("OPA evaluation Error: %v", err)
+		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
+			IsAuthorized: false,
+		}, err
 	}
 
-	log.Println("Result of query evaluation is = ", rs[0].Expressions[0].Value)
-	if rs[0].Expressions[0].Value == true {
-		return generatePolicy("user", "Allow", request.MethodArn), nil
+	// print all vars
+	log.Printf("RegoResult = %+v\n", regoResult)
+
+	log.Println("Result of query evaluation is = ", regoResult[0].Expressions[0].Value)
+	if regoResult[0].Expressions[0].Value == true {
+		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
+			IsAuthorized: true,
+		}, nil
 	} else {
-		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
+		log.Println("Unauthorized")
+		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
+			IsAuthorized: false,
+		}, nil
 	}
 
 }
@@ -109,21 +118,28 @@ func main() {
 	lambda.Start(handler)
 }
 
-func generatePolicy(principalID, effect, resource string) events.APIGatewayCustomAuthorizerResponse {
-	authResponse := events.APIGatewayCustomAuthorizerResponse{PrincipalID: principalID}
+// example of using "github.com/lestrrat-go/jwx/jwk" to validate tokens
+func validateJWT(region string, userPoolId string, token string) jwt.Token {
+	ctx := context.Background()
 
-	if effect != "" && resource != "" {
-		authResponse.PolicyDocument = events.APIGatewayCustomAuthorizerPolicy{
-			Version: "2012-10-17",
-			Statement: []events.IAMPolicyStatement{
-				{
-					Action:   []string{"execute-api:Invoke"},
-					Effect:   effect,
-					Resource: []string{resource},
-				},
-			},
-		}
+	// could be faster if cached this is just for example
+	keyset, err := jwk.Fetch(ctx, "https://cognito-idp."+region+".amazonaws.com/"+userPoolId+"/.well-known/jwks.json")
+
+	if err != nil {
+		log.Fatalf("Failed to fetch cognito JWKS keyset %v", err)
 	}
 
-	return authResponse
+	parsedToken, err := jwt.Parse(
+		[]byte(token),
+		jwt.WithKeySet(keyset),
+		jwt.WithValidate(true),
+		jwt.InferAlgorithmFromKey(true),
+		//jwt.WithIssuer()
+	)
+
+	if err != nil {
+		log.Fatalf("JWT Parse and validation failed with error %v", err)
+	}
+
+	return parsedToken
 }

@@ -24,6 +24,9 @@ export class OpaAuthorizerStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserPoolTokenEndPoint', {
       value: `https://${domain.domainName}.auth.${domain.stack.region}.amazoncognito.com/token`
     })
+    new cdk.CfnOutput(this, 'UserPoolPublicKey', {
+      value: `https://cognito-idp.${props?.env?.region}.amazonaws.com/${userPool.userPoolId}/.well-known/jwks.json`
+    })
 
     // app client allowing postman to get JWT token
     const appClient = userPool.addClient('opa-app-client', {
@@ -54,8 +57,9 @@ export class OpaAuthorizerStack extends cdk.Stack {
             console.log(`Before Bundling ${inputDir} -> ${outputDir}`)
             // adds data folder to bundle
             const dataPath = path.resolve(inputDir, 'data')
+            const keyPath = path.resolve(inputDir, 'keys')
             console.log(`Adding data path ${dataPath}`)
-            return [`cp -r ${dataPath} ${outputDir}`]
+            return [`cp -r ${dataPath} ${outputDir}`, `cp -r ${keyPath} ${outputDir}`]
           },
 
           // required for some reason?
@@ -71,7 +75,7 @@ export class OpaAuthorizerStack extends cdk.Stack {
       authHandler,
       {
         responseTypes: [authorizers.HttpLambdaResponseType.SIMPLE], // Define if returns simple and/or iam response
-        resultsCacheTtl: cdk.Duration.seconds(0)
+        resultsCacheTtl: cdk.Duration.seconds(0),
       }
     );
 

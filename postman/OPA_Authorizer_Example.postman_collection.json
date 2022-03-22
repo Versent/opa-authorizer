@@ -1,0 +1,130 @@
+{
+	"info": {
+		"_postman_id": "ab768d8a-bcbd-4f50-b99f-220943a60e8e",
+		"name": "OPA Authorizer Example",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "google",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "https://{{host}}.execute-api.ap-southeast-2.amazonaws.com/google",
+					"protocol": "https",
+					"host": [
+						"{{host}}",
+						"execute-api",
+						"ap-southeast-2",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"google"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "bing",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{host}}.execute-api.ap-southeast-2.amazonaws.com/bing",
+					"protocol": "https",
+					"host": [
+						"{{host}}",
+						"execute-api",
+						"ap-southeast-2",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"bing"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "clientId",
+				"value": "{{clientId}}",
+				"type": "string"
+			},
+			{
+				"key": "useBrowser",
+				"value": true,
+				"type": "boolean"
+			},
+			{
+				"key": "client_authentication",
+				"value": "body",
+				"type": "string"
+			},
+			{
+				"key": "accessTokenUrl",
+				"value": "https://versent-opa-test.auth.ap-southeast-2.amazoncognito.com/token",
+				"type": "string"
+			},
+			{
+				"key": "authUrl",
+				"value": "https://versent-opa-test.auth.ap-southeast-2.amazoncognito.com/login",
+				"type": "string"
+			},
+			{
+				"key": "tokenName",
+				"value": "OPA Test",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "7viplcbzo5"
+		},
+		{
+			"key": "clientId",
+			"value": "6qbcc3rcdt97ckqrv0p72knvuf"
+		}
+	]
+}
