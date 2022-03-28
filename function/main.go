@@ -72,8 +72,6 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 
 	logrus.WithField("path", path).
 		WithField("method", method).
-		WithField("tokenHeader", tokenHeader).
-		WithField("token", token).
 		Info("Attempting to validate token")
 
 	keySet, fetchKeyError := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
