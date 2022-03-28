@@ -74,7 +74,6 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 		WithField("method", method).
 		Info("Attempting to validate token")
 
-	//keySet, fetchKeyError := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
 	keySet, fetchKeyError := loadKey("./keys/jwks.json")
 
 	if fetchKeyError != nil {

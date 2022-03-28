@@ -117,23 +117,6 @@ func TestInvalidIssuerJWTHasError(t *testing.T) {
 	expectError("\"iss\" not satisfied: values do not match", validateError, t)
 }
 
-func TestInvalidAudienceJWTHasError(t *testing.T) {
-	const issuer = "issuer"
-	const audience = "audience"
-	issuedAt := time.Now()
-	expiration := time.Now().Add(time.Hour)
-
-	signedJwt, publicKeySet, signError := createSignedJWT(issuer, "invalid", issuedAt, expiration)
-
-	if signError != nil {
-		t.Errorf("test failed due to signing error %v", err)
-	}
-
-	_, validateError := validateJWT(signedJwt, publicKeySet, issuer, audience)
-
-	expectError("aud not satisfied", validateError, t)
-}
-
 func TestExpiredJWTHasError(t *testing.T) {
 	const issuer = "issuer"
 	const audience = "audience"
