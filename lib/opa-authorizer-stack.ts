@@ -55,7 +55,8 @@ export class OpaAuthorizerStack extends cdk.Stack {
       retryAttempts: 0,
       environment: {
         ISSUER: idpDomain,
-        AUDIENCE: appClient.userPoolClientId
+        AUDIENCE: appClient.userPoolClientId,
+        LOG_LEVEL: 'INFO'
       },
       bundling: {
         commandHooks: {

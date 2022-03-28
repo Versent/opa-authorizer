@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/open-policy-agent/opa/loader"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/open-policy-agent/opa/storage"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -25,60 +25,81 @@ var (
 func init() {
 	policyData, err := loader.All([]string{"data"})
 	if err != nil {
-		log.Fatalf("Failed to load bundle from disk: %v", err)
+		logrus.WithError(err).Fatal("Failed to load bundle from disk")
 	}
 
 	// Compile the module. The keys are used as identifiers in error messages.
 	compiler, err = policyData.Compiler()
 	if err != nil {
-		log.Fatalf("Failed to compile policies in bundle: %v", err)
+		logrus.WithError(err).Fatal("Failed to compile policies in bundle")
 	}
 
 	store, err = policyData.Store()
 	if err != nil {
-		log.Fatalf("Failed to create storage from bundle: %v", err)
+		logrus.WithError(err).Fatal("Failed to create storage from bundle")
 	}
 }
 
 func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2CustomAuthorizerSimpleResponse, error) {
-	log.Println("handler start ")
-
-	log.Printf("Request = %+v\n", request)
-
-	path := request.RawPath
-	log.Println("path is = ", path)
-
-	method := request.RequestContext.HTTP.Method
-	log.Println("method is = ", method)
-
-	tokenHeader := request.Headers["authorization"]
-	log.Println("tokenHeader is = ", tokenHeader)
-
-	tokens := strings.Split(tokenHeader, " ")
-	token := tokens[1]
-	log.Println("token is = ", token)
-
-	log.Println("Attempting to validate token")
 	issuer := os.Getenv("ISSUER")
 	audience := os.Getenv("AUDIENCE")
+	logLevel := os.Getenv("LOG_LEVEL")
 
-	keySet := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
+	// set logger defaults
+	level, err := logrus.ParseLevel(logLevel)
+	if err == nil {
+		logrus.SetLevel(level)
+	}
 
-	parsedToken, validationError := validateJWT([]byte(token), keySet, issuer, audience)
+	// set json format
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 
-	if validationError != nil {
-		log.Printf("JWT validation error %s\n", validationError)
+	// startup info
+	logrus.
+		WithField("ISSUER", issuer).
+		WithField("AUDIENCE", audience).
+		WithField("LOG_LEVEL", logLevel).
+		Info("starting")
+
+	logrus.
+		WithField("request", request).Info()
+
+	path := request.RawPath
+	method := request.RequestContext.HTTP.Method
+	tokenHeader := request.Headers["authorization"]
+	tokens := strings.Split(tokenHeader, " ")
+	token := tokens[1]
+
+	logrus.WithField("path", path).
+		WithField("method", method).
+		WithField("tokenHeader", tokenHeader).
+		WithField("token", token).
+		Info("Attempting to validate token")
+
+	keySet, fetchKeyError := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
+
+	if fetchKeyError != nil {
+		logrus.WithError(fetchKeyError).Fatal("JWKS fetch error")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, nil
 	}
 
-	log.Println("id", parsedToken.JwtID())
-	log.Println("sub", parsedToken.Subject())
-	log.Println("exp", parsedToken.Expiration().GoString())
-	log.Println("iss", parsedToken.IssuedAt())
+	parsedToken, validationError := validateJWT([]byte(token), keySet, issuer, audience)
 
-	log.Printf("ParsedToken = %+v\n", parsedToken)
+	if validationError != nil {
+		logrus.WithError(validationError).Fatal("JWT validation error")
+		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
+			IsAuthorized: false,
+		}, nil
+	}
+
+	logrus.WithField("id", parsedToken.JwtID()).
+		WithField("sub", parsedToken.Subject()).
+		WithField("exp", parsedToken.Expiration().GoString()).
+		WithField("iss", parsedToken.IssuedAt()).
+		WithField("aud", parsedToken.Audience()).
+		Info("Parse token parameters")
 
 	// Run evaluation.
 	start := time.Now()
@@ -95,30 +116,27 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	)
 
 	elapsed := time.Since(start)
-	log.Println("Query initiation  took ", elapsed)
+	logrus.WithField("elapsed_init", elapsed).Info("Rego query initiatized", elapsed)
 	start_eval := time.Now()
 	// Run evaluation.
 	regoResult, err := rego.Eval(ctx)
 	elapsed_eval := time.Since(start_eval)
-	log.Println("Evaluation  took ", elapsed_eval)
+	logrus.WithField("elapsed_eval", elapsed_eval).Info("Rego query evaluated", elapsed_eval)
 
 	if err != nil {
-		log.Printf("OPA evaluation Error: %v", err)
+		logrus.WithError(err).Fatal("OPA Evaluation Error")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, err
 	}
 
-	// print all vars
-	log.Printf("RegoResult = %+v\n", regoResult)
-
-	log.Println("Result of query evaluation is = ", regoResult[0].Expressions[0].Value)
+	logrus.WithField("result", regoResult).Info("Rego query result")
 	if regoResult[0].Expressions[0].Value == true {
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: true,
 		}, nil
 	} else {
-		log.Println("Unauthorized")
+		logrus.Info("Unauthorized")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, nil
