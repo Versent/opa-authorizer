@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-lambda-go v1.28.0
 	github.com/lestrrat-go/jwx v1.2.20
 	github.com/open-policy-agent/opa v0.38.1
+	github.com/sirupsen/logrus v1.8.1
 )
 
 require (
@@ -25,5 +26,6 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.0.0-20180916065949-5c77d914dd0b // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
