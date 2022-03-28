@@ -77,7 +77,7 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	keySet, fetchKeyError := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
 
 	if fetchKeyError != nil {
-		logrus.WithError(fetchKeyError).Fatal("JWKS fetch error")
+		logrus.WithError(fetchKeyError).Error("JWKS fetch error")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, nil
@@ -86,7 +86,7 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	parsedToken, validationError := validateJWT([]byte(token), keySet, issuer, audience)
 
 	if validationError != nil {
-		logrus.WithError(validationError).Fatal("JWT validation error")
+		logrus.WithError(validationError).Error("JWT validation error")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, nil
@@ -122,7 +122,7 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	logrus.WithField("elapsed_eval", elapsed_eval).Info("Rego query evaluated", elapsed_eval)
 
 	if err != nil {
-		logrus.WithError(err).Fatal("OPA Evaluation Error")
+		logrus.WithError(err).Error("OPA Evaluation Error")
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, err

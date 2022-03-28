@@ -17,7 +17,6 @@ func validateJWT(token []byte, keyset jwk.Set, issuer string, audience string) (
 		jwt.WithKeySet(keyset),
 		jwt.WithValidate(true),
 		jwt.InferAlgorithmFromKey(true),
-		jwt.WithAudience(audience),
 		jwt.WithIssuer(issuer),
 	)
 
