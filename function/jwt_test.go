@@ -184,3 +184,13 @@ func TestJunkJWTHasError(t *testing.T) {
 
 	expectError("failed to parse token data as JWS message: failed to parse JOSE headers: invalid character '&' looking for beginning of value", validateError, t)
 }
+
+func TestLoadKey(t *testing.T) {
+	keySet, err := loadKey("./keys/jwks.json")
+
+	if err != nil {
+		t.Errorf("test failed due to error %s", err)
+	}
+
+	t.Logf("final keyset %s", keySet)
+}

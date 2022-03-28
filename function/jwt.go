@@ -40,14 +40,14 @@ func fetchKey(region string, userPoolId string) (jwk.Set, error) {
 	return keyset, nil
 }
 
-func loadKey(path string) (jwk.Key, error) {
-	rawKey, err := os.ReadFile("./keys/data.json")
+func loadKey(path string) (jwk.Set, error) {
+	rawKey, err := os.ReadFile(path)
 
 	if err != nil {
 		return nil, err
 	}
 
-	key, err := jwk.New(rawKey)
+	key, err := jwk.Parse(rawKey)
 
 	if err != nil {
 		return nil, err
