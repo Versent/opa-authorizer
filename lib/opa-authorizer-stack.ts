@@ -24,8 +24,10 @@ export class OpaAuthorizerStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserPoolTokenEndPoint', {
       value: `https://${domain.domainName}.auth.${domain.stack.region}.amazoncognito.com/token`
     })
+
+    const idpDomain = `https://cognito-idp.${props?.env?.region}.amazonaws.com/${userPool.userPoolId}`
     new cdk.CfnOutput(this, 'UserPoolPublicKey', {
-      value: `https://cognito-idp.${props?.env?.region}.amazonaws.com/${userPool.userPoolId}/.well-known/jwks.json`
+      value: `${idpDomain}/.well-known/jwks.json`
     })
 
     // app client allowing postman to get JWT token
@@ -51,6 +53,10 @@ export class OpaAuthorizerStack extends cdk.Stack {
       runtime: Runtime.GO_1_X, 
       entry: path.resolve('function'),
       retryAttempts: 0,
+      environment: {
+        ISSUER: idpDomain,
+        AUDIENCE: appClient.userPoolClientId
+      },
       bundling: {
         commandHooks: {
           beforeBundling: (inputDir, outputDir) => {

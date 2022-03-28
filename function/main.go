@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/loader"
 	"github.com/open-policy-agent/opa/rego"
@@ -60,7 +59,20 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	log.Println("token is = ", token)
 
 	log.Println("Attempting to validate token")
-	parsedToken := validateJWT("ap-southeast-2", "ap-southeast-2_bNwBiXJry", token)
+	issuer := os.Getenv("ISSUER")
+	audience := os.Getenv("AUDIENCE")
+
+	keySet := fetchKey("ap-southeast-2", "ap-southeast-2_bNwBiXJry")
+
+	parsedToken, validationError := validateJWT([]byte(token), keySet, issuer, audience)
+
+	if validationError != nil {
+		log.Printf("JWT validation error %s\n", validationError)
+		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
+			IsAuthorized: false,
+		}, nil
+	}
+
 	log.Println("id", parsedToken.JwtID())
 	log.Println("sub", parsedToken.Subject())
 	log.Println("exp", parsedToken.Expiration().GoString())
@@ -91,7 +103,7 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 	log.Println("Evaluation  took ", elapsed_eval)
 
 	if err != nil {
-		log.Fatalf("OPA evaluation Error: %v", err)
+		log.Printf("OPA evaluation Error: %v", err)
 		return events.APIGatewayV2CustomAuthorizerSimpleResponse{
 			IsAuthorized: false,
 		}, err
@@ -116,30 +128,4 @@ func handler(request APIGatewayCustomAuthorizerRequestV2) (events.APIGatewayV2Cu
 
 func main() {
 	lambda.Start(handler)
-}
-
-// example of using "github.com/lestrrat-go/jwx/jwk" to validate tokens
-func validateJWT(region string, userPoolId string, token string) jwt.Token {
-	ctx := context.Background()
-
-	// could be faster if cached this is just for example
-	keyset, err := jwk.Fetch(ctx, "https://cognito-idp."+region+".amazonaws.com/"+userPoolId+"/.well-known/jwks.json")
-
-	if err != nil {
-		log.Fatalf("Failed to fetch cognito JWKS keyset %v", err)
-	}
-
-	parsedToken, err := jwt.Parse(
-		[]byte(token),
-		jwt.WithKeySet(keyset),
-		jwt.WithValidate(true),
-		jwt.InferAlgorithmFromKey(true),
-		//jwt.WithIssuer()
-	)
-
-	if err != nil {
-		log.Fatalf("JWT Parse and validation failed with error %v", err)
-	}
-
-	return parsedToken
 }
